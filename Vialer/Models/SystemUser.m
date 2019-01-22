@@ -394,7 +394,7 @@ static NSString * const SystemUserAudioQualitySUDKey    = @"SystemUserAudioQuali
 
 - (void)setUse3GPlus:(BOOL)use3GPlus {
     [[NSUserDefaults standardUserDefaults] setBool:use3GPlus forKey:SystemUserSUDUse3GPlus];
-    
+
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_HIGH, 0), ^{
         [[NSNotificationCenter defaultCenter] postNotificationName:SystemUserUse3GPlusNotification object:self];
     });
@@ -590,17 +590,25 @@ static NSString * const SystemUserAudioQualitySUDKey    = @"SystemUserAudioQuali
         [SAMKeychain setPassword:password forService:self.serviceName account:username];
     }
 
-    self.emailAddress   = userDict[SystemUserApiKeyEmailAddress];
-
-    self.firstName      = userDict[SystemUserApiKeyFirstName];
-    self.preposition    = userDict[SystemUserApiKeyPreposition];
-    self.lastName       = userDict[SystemUserApiKeyLastName];
-    self.clientID       = userDict[SystemUserApiKeyClient];
-
-    if (![userDict[SystemUserApiKeyMobileNumber] isEqual:[NSNull null]]) {
+    if (userDict[SystemUserApiKeyEmailAddress]) {
+        self.emailAddress = userDict[SystemUserApiKeyEmailAddress];
+    }
+    if (userDict[SystemUserApiKeyFirstName]) {
+        self.firstName = userDict[SystemUserApiKeyFirstName];
+    }
+    if (userDict[SystemUserApiKeyPreposition]) {
+        self.preposition = userDict[SystemUserApiKeyPreposition];
+    }
+    if (userDict[SystemUserApiKeyLastName]) {
+        self.lastName= userDict[SystemUserApiKeyLastName];
+    }
+    if (userDict[SystemUserApiKeyClient]) {
+        self.clientID = userDict[SystemUserApiKeyClient];
+    }
+    if (userDict[SystemUserApiKeyMobileNumber]) {
         self.mobileNumber = userDict[SystemUserApiKeyMobileNumber];
     }
-    
+
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
 
     // If the defaults contains a value for SIP Enabled, use that value,
@@ -613,15 +621,14 @@ static NSString * const SystemUserAudioQualitySUDKey    = @"SystemUserAudioQuali
 
     [defaults setObject:self.username forKey:SystemUserSUDUsername];
     [defaults setObject:self.emailAddress forKey:SystemUserSUDEmailAddress];
-
     [defaults setObject:self.firstName forKey:SystemUserSUDFirstName];
     [defaults setObject:self.preposition forKey:SystemUserSUDPreposition];
     [defaults setObject:self.lastName forKey:SystemUserSUDLastName];
     [defaults setObject:self.clientID forKey:SystemUserApiKeyClient];
-
     [defaults setObject:self.mobileNumber forKey:SystemUserSUDMobileNumber];
-    
+
     [defaults synchronize];
+
     self.loggedIn = YES;
     self.loggingOut = NO;
 }
@@ -768,21 +775,21 @@ static NSString * const SystemUserAudioQualitySUDKey    = @"SystemUserAudioQuali
         if (error) {
             if (completion) completion(NO, error);
         } else {
-            
+
             [self setMobileProfileFromUserDict:responseData];
-            
+
             id sipAccount = responseData[SystemUserApiKeySIPAccount];
             id sipPassword = responseData[SystemUserApiKeySIPPassword];
             id useEncryption = responseData[SystemUserApiKeyUseEncryption];
 
             if ([sipAccount isKindOfClass:[NSNull class]] || [sipPassword isKindOfClass:[NSNull class]]) {
                 [self removeSIPCredentials];
-                
+
                 if (completion) {
                     completion(YES, nil);
                 }
             }
-            
+
             if (![sipAccount isKindOfClass:[NSNumber class]] || ![sipPassword isKindOfClass:[NSString class]]) {
                 [self removeSIPCredentials];
                 if (completion) {
@@ -790,7 +797,7 @@ static NSString * const SystemUserAudioQualitySUDKey    = @"SystemUserAudioQuali
                     completion(NO, error);
                 }
             }
-            
+
             if (![self.sipAccount isEqualToString:[sipAccount stringValue]] || ![self.sipPassword isEqualToString:sipPassword]) {
                 self.sipAccount = [sipAccount stringValue];
                 [SAMKeychain setPassword:sipPassword forService:self.serviceName account:self.sipAccount];
@@ -826,8 +833,9 @@ static NSString * const SystemUserAudioQualitySUDKey    = @"SystemUserAudioQuali
 
             [self setMobileProfileFromUserDict:responseData];
 
-            // This is to update properties like sipEnabled and sipAccount in various cases like when fetching app account
+            // This is to update properties like sipEnabled and sipAccount in various cases like when fetching app account.
             [self setOwnPropertiesFromUserDict:responseData withUsername:nil andPassword:nil];
+
             if (completion) completion(YES, nil);
         }
     }];
@@ -837,7 +845,7 @@ static NSString * const SystemUserAudioQualitySUDKey    = @"SystemUserAudioQuali
 
 - (void)updateSystemUserFromVGWithCompletion:(void (^)(NSError *error))completion {
     [self.operationsManager userProfileWithCompletion:^(NSURLResponse *operation, NSDictionary *responseObject, NSError *error) {
-        
+
         if (!error && [responseObject objectForKey:SystemUserApiKeyAPIToken]) {
             self.apiToken = responseObject[SystemUserApiKeyAPIToken];
             [[NSUserDefaults standardUserDefaults] setObject:self.apiToken forKey:SystemUserSUDAPIToken];
@@ -845,7 +853,7 @@ static NSString * const SystemUserAudioQualitySUDKey    = @"SystemUserAudioQuali
             [self updateSystemUserFromVGWithCompletion:completion];
         } else if (!error) {
             [self setOwnPropertiesFromUserDict:responseObject withUsername:nil andPassword:nil];
-            
+
             [self fetchMobileProfileFromRemoteWithCompletion:^(BOOL success, NSError *error) {
                 if (completion) {
                     if (success) {
