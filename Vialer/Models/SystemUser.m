@@ -808,6 +808,7 @@ NSString *const SystemUserAvailabilityAvailabilityKey = @"AvailabilityModelAvail
                 if (completion) {
                     completion(YES, nil);
                 }
+                return;
             }
 
             if (![sipAccount isKindOfClass:[NSNumber class]] || ![sipPassword isKindOfClass:[NSString class]]) {
